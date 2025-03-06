@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, Trophy, Clock, Medal } from 'lucide-react';
+import { RefreshCw, Trophy, Clock, Medal, Info } from 'lucide-react';
 import { generateSudoku, isSolved } from './sudokuLogic';
 
 interface LeaderboardEntry {
@@ -25,6 +25,7 @@ function App() {
   const [time, setTime] = useState<number>(0);
   const [isActive, setIsActive] = useState<boolean>(false);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [showInstructions, setShowInstructions] = useState<boolean>(false);
   const [cellStates, setCellStates] = useState<Array<Array<{value: number | null, scored: boolean}>>>(
     Array(9).fill(null).map(() => Array(9).fill(null).map(() => ({ value: null, scored: false })))
   );
@@ -155,8 +156,8 @@ function App() {
     if (selectedCell && !initialBoard[selectedCell[0]][selectedCell[1]]) {
       const [row, col] = selectedCell;
       
-      // Only proceed if there's a value to clear
-      if (board[row][col] !== null) {
+      // Only proceed if there's a value to clear and it's not correct
+      if (board[row][col] !== null && board[row][col] !== solution[row][col]) {
         // Update the board
         const newBoard = [...board];
         newBoard[row][col] = null;
@@ -183,6 +184,13 @@ function App() {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold text-blue-700">Sudoku</h1>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowInstructions(!showInstructions)}
+              className="text-gray-600 hover:text-blue-600 transition-colors"
+              aria-label="Show instructions"
+            >
+              <Info size={20} />
+            </button>
             <div className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-lg">
               <Clock size={18} />
               <span className="font-bold">{formatTime(time)}</span>
@@ -191,15 +199,22 @@ function App() {
               <Trophy size={18} />
               <span className="font-bold">{score} pts</span>
             </div>
-            <button 
-              onClick={newGame}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <RefreshCw size={18} />
-              New Game
-            </button>
           </div>
         </div>
+
+        {/* Instructions Modal */}
+        {showInstructions && (
+          <div className="mb-4 p-4 bg-blue-50 text-blue-800 rounded-lg">
+            <h2 className="font-bold mb-2">How to Play</h2>
+            <ul className="space-y-1 text-sm">
+              <li>• Click on an empty cell and use the number pad to fill in numbers</li>
+              <li>• Fill the grid so that every row, column, and 3×3 box contains the numbers 1-9</li>
+              <li>• Green numbers are correct (+1 point)</li>
+              <li>• Red numbers are incorrect (-1 point)</li>
+              <li>• Complete the puzzle as quickly as possible for a better score!</li>
+            </ul>
+          </div>
+        )}
         
         {/* Last move feedback */}
         {lastMove && (
@@ -260,22 +275,32 @@ function App() {
           ))}
         </div>
 
-        {/* Number Pad */}
-        <div className="grid grid-cols-5 gap-2 mb-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((number) => (
+        {/* Number Pad and Controls */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-5 gap-2">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((number) => (
+              <button
+                key={number}
+                className="bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold py-3 rounded-lg text-xl transition-colors"
+                onClick={() => handleNumberInput(number)}
+              >
+                {number}
+              </button>
+            ))}
             <button
-              key={number}
-              className="bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold py-3 rounded-lg text-xl transition-colors"
-              onClick={() => handleNumberInput(number)}
+              className="bg-red-100 hover:bg-red-200 text-red-800 font-bold py-3 rounded-lg text-xl transition-colors"
+              onClick={handleClearCell}
             >
-              {number}
+              Clear
             </button>
-          ))}
-          <button
-            className="bg-red-100 hover:bg-red-200 text-red-800 font-bold py-3 rounded-lg text-xl transition-colors"
-            onClick={handleClearCell}
+          </div>
+          
+          <button 
+            onClick={newGame}
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors text-lg font-semibold"
           >
-            Clear
+            <RefreshCw size={20} />
+            New Game
           </button>
         </div>
 
@@ -291,13 +316,6 @@ function App() {
             </p>
           </div>
         )}
-
-        {/* Instructions */}
-        <div className="mt-6 text-sm text-gray-500 text-center">
-          <p>Click on an empty cell and use the number pad to fill in numbers.</p>
-          <p>Try to fill the grid so that every row, column, and 3×3 box contains the numbers 1-9.</p>
-          <p className="mt-2"><span className="text-green-600 font-medium">Green</span> numbers are correct (+1 point), <span className="text-red-600 font-medium">red</span> numbers are incorrect (-1 point).</p>
-        </div>
 
         {/* Leaderboard */}
         {leaderboard.length > 0 && (
